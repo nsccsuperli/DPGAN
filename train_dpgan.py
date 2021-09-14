@@ -21,7 +21,7 @@ from torch.autograd import Variable
 import torchvision.transforms as transforms
 # local libs
 from nets.commons import Weights_Normal, VGG19_PercepLoss, VGG19_EdgeLoss
-from nets.funiegan import GeneratorFunieGAN, DiscriminatorFunieGAN
+from nets.dpgan import GeneratorFunieGAN, DiscriminatorFunieGAN
 from utils.data_utils import GetTrainingPairs, GetValImage
 from torchvision.transforms import *
 ## get configs and training options
