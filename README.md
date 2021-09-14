@@ -18,5 +18,8 @@
 - Use the [evaluate.py](evaluate.py) script for evaluate
 - A sample model is provided in [models](models)  
 
+| Enhanced underwater imagery |
+|:--------------------|
+| ![det-enh](./data/res.gif) |
 ### Acknowledgements
 - https://github.com/xahidbuffon/FUnIE-GAN
