@@ -79,7 +79,6 @@ if torch.cuda.is_available():
     discriminator = discriminator.cuda()
     Adv_cGAN.cuda()
     L1_G = L1_G.cuda()
-
     Edge_vgg = Edge_vgg.cuda()
     Tensor = torch.cuda.FloatTensor
 else:
