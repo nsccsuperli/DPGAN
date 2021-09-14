@@ -1,7 +1,5 @@
 """
- > Training pipeline for FUnIE-GAN (paired) model
-   * Paper: arxiv.org/pdf/1903.09766.pdf
- > Maintainer: https://github.com/xahidbuffon
+ > Maintainer: https://github.com/nsccsuperli/DPGAN
 """
 # py libs
 import os
@@ -20,8 +18,8 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torchvision.transforms as transforms
 # local libs
-from nets.commons import Weights_Normal, VGG19_PercepLoss, VGG19_EdgeLoss
-from nets.dpgan import GeneratorFunieGAN, DiscriminatorFunieGAN
+from nets.commons import Weights_Normal, VGG19_EdgeLoss
+from nets.dpgan import GeneratorDPGAN, DiscriminatorDPGAN
 from utils.data_utils import GetTrainingPairs, GetValImage
 from torchvision.transforms import *
 ## get configs and training options
@@ -29,7 +27,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--cfg_file", type=str, default="configs/train_euvp.yaml")
 parser.add_argument("--epoch", type=int, default=0, help="which epoch to start from")
 parser.add_argument("--num_epochs", type=int, default=201, help="number of epochs of training")
-parser.add_argument("--batch_size", type=int, default=8, help="size of the batches")
+parser.add_argument("--batch_size", type=int, default=32, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0003, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of 1st order momentum")
 parser.add_argument("--b2", type=float, default=0.99, help="adam: decay of 2nd order momentum")
@@ -54,24 +52,24 @@ ckpt_interval = cfg["ckpt_interval"]
 
 
 ## create dir for model and validation data
-samples_dir = os.path.join("samples/FunieGAN/", dataset_name)
-checkpoint_dir = os.path.join("checkpoints/FunieGAN/", dataset_name)
+samples_dir = os.path.join("samples/DPGAN/", dataset_name)
+checkpoint_dir = os.path.join("checkpoints/DPGAN/", dataset_name)
 os.makedirs(samples_dir, exist_ok=True)
 os.makedirs(checkpoint_dir, exist_ok=True)
 
-""" FunieGAN specifics: loss functions and patch-size
+""" DPGAN specifics: loss functions and patch-size
 -----------------------------------------------------"""
 
 Adv_cGAN = torch.nn.MSELoss()
 L1_G  = torch.nn.L1Loss() # similarity loss (l1)
 
-Edge_vgg = VGG19_EdgeLoss()
-lambda_1,lambda_con_edg = 6, 12
+Edge_vgg = VGG19_EdgeLoss() # Edge loss
+lambda_1,lambda_con_edg = 6, 12 # weights coefficient
 patch = (1, img_height//16, img_width//16) # 16x16 for 256x256
 
 # Initialize generator and discriminator
-generator = GeneratorFunieGAN()
-discriminator = DiscriminatorFunieGAN()
+generator = GeneratorDPGAN()
+discriminator = DiscriminatorDPGAN()
 
 # see if cuda is available
 if torch.cuda.is_available():
@@ -89,8 +87,8 @@ if args.epoch == 0:
     generator.apply(Weights_Normal)
     discriminator.apply(Weights_Normal)
 else:
-    generator.load_state_dict(torch.load("checkpoints/FunieGAN/%s/generator_%d.pth" % (dataset_name, args.epoch)))
-    discriminator.load_state_dict(torch.load("checkpoints/FunieGAN/%s/discriminator_%d.pth" % (dataset_name, epoch)))
+    generator.load_state_dict(torch.load("checkpoints/DPGAN/%s/generator_%d.pth" % (dataset_name, args.epoch)))
+    discriminator.load_state_dict(torch.load("checkpoints/DPGAN/%s/discriminator_%d.pth" % (dataset_name, epoch)))
     print ("Loaded model from epoch %d" %(epoch))
 
 # Optimizers
@@ -120,21 +118,17 @@ val_dataloader = DataLoader(
 )
 
 
-
-
-
-
-def tensor_to_PIL(variable):  # 新加函数将Variable转换为图片
+def tensor_to_PIL(variable):  # Variable To Image
     image = variable.cpu().clone()
-    image = image.data  # Variable张量转化为tensor
+    image = image.data  # Variable To tensor
     for i in range(len(image)):
         save_file = "./record/process_img/up4/" + str(i) + ".jpg"
         temp_image = image[i].clone()
-        temp_image = temp_image.unsqueeze(0)  # 压缩数组维数，去掉axis=''的维，0代表None 去掉一维的
-        temp_image = transforms.ToPILImage()(temp_image.float()).convert("L")  # ToPILImage 需要一个三维的图像
+        temp_image = temp_image.unsqueeze(0)  # unsqueeze
+        temp_image = transforms.ToPILImage()(temp_image.float()).convert("L")  # To PILImage RGB 3 channel
         temp_image.save(save_file, quality=95)
 
-## Training pipeline
+## start Training
 for epoch in range(epoch, num_epochs):
     for i, batch in enumerate(dataloader):
         # Model inputs
@@ -150,24 +144,22 @@ for epoch in range(epoch, num_epochs):
 
         ## Train Discriminator
         optimizer_D.zero_grad()
-        # 根据已有的图像生成仿真图像
+        # Generate simulation images based on existing images
         imgs_fake = generator(imgs_distorted)
-        # 将真实的图像和原始的图像送入判别网络,输出验证结果
+        # Send the real image and the original image to the discriminant network, and output the verification result
         pred_real = discriminator(imgs_good_gt, imgs_distorted)
         img_sample_pred_real = torch.cat((imgs_good_gt.data, imgs_distorted.data), -2)
-        save_image(img_sample_pred_real.data, "samples/FunieGAN/%s/%s.png" % (dataset_name, "img_sample_pred_real"),
+        save_image(img_sample_pred_real.data, "samples/DPGAN/%s/%s.png" % (dataset_name, "img_sample_pred_real"),
                    nrow=5, normalize=True)
-        # 计算loss数值
+        # Calculate the loss value
         loss_real = Adv_cGAN(pred_real, valid)
-        # 将真实的图像和仿真图像送入判别网络
+        # Send real images and simulated images to the discriminant network
         pred_fake = discriminator(imgs_fake, imgs_distorted)
         # print(str(pred_fake))
         img_sample_pred_fake = torch.cat((imgs_fake.data, imgs_distorted.data), -2)
-        save_image(img_sample_pred_fake.data, "samples/FunieGAN/%s/%s.png" % (dataset_name, "img_sample_pred_fake"), nrow=5, normalize=True)
-        # 计算仿真图像和loss数值
+        save_image(img_sample_pred_fake.data, "samples/DPGAN/%s/%s.png" % (dataset_name, "img_sample_pred_fake"), nrow=5, normalize=True)
         loss_fake = Adv_cGAN(pred_fake, fake)
-        save_image(imgs_fake.data, "samples/FunieGAN/%s/%s.png" % (dataset_name, "imgs_fake"), nrow=5, normalize=True)
-        # save_image(fake.data, "samples/FunieGAN/%s/%s.png" % (dataset_name, "fake"), nrow=5, normalize=True)
+        save_image(imgs_fake.data, "samples/DPGAN/%s/%s.png" % (dataset_name, "imgs_fake"), nrow=5, normalize=True)
         # Total loss: real + fake (standard PatchGAN)
         loss_D = 0.5 * (loss_real + loss_fake) * 10.0 # 10x scaled for stability
         loss_D.backward()
@@ -207,12 +199,12 @@ for epoch in range(epoch, num_epochs):
             imgs_val = Variable(imgs["val"].type(Tensor))
             imgs_gen = generator(imgs_val)
             img_sample = torch.cat((imgs_val.data, imgs_gen.data), -2)
-            save_image(img_sample, "samples/FunieGAN/%s/%s.png" % (dataset_name, batches_done), nrow=5, normalize=True)
+            save_image(img_sample, "samples/DPGAN/%s/%s.png" % (dataset_name, batches_done), nrow=5, normalize=True)
 
     ## Save model checkpoints
     if (epoch % ckpt_interval == 0):
 
-        torch.save(generator.state_dict(), "checkpoints/FunieGAN/%s/generator_%d.pth" % (dataset_name, epoch))
-        torch.save(discriminator.state_dict(), "checkpoints/FunieGAN/%s/discriminator_%d.pth" % (dataset_name, epoch))
+        torch.save(generator.state_dict(), "checkpoints/DPGAN/%s/generator_%d.pth" % (dataset_name, epoch))
+        torch.save(discriminator.state_dict(), "checkpoints/DPGAN/%s/discriminator_%d.pth" % (dataset_name, epoch))
 
 

@@ -1,6 +1,6 @@
 """
  > Modules for processing training/validation data
- > Maintainer: https://github.com/xahidbuffon
+ > Maintainer: https://github.com/nsccsuperli/DPGAN
 """
 import os
 import glob

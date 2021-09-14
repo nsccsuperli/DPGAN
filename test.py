@@ -26,7 +26,7 @@ parser.add_argument("--data_dir", type=str, default="data/OurMeth/underwater2/gr
 parser.add_argument("--sample_dir", type=str, default="data/OurMeth/underwater2/prediction/synthesis")
 parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
 parser.add_argument("--model_name", type=str, default="funiegan") # or "ugan"
-parser.add_argument("--model_path", type=str, default="checkpoints/FunieGAN/underwater_type1/generator_100.pth")
+parser.add_argument("--model_path", type=str, default="checkpoints/DPGAN/underwater_type1/generator_100.pth")
 
 opt = parser.parse_args()
 
@@ -39,7 +39,7 @@ Tensor = torch.cuda.FloatTensor if is_cuda else torch.FloatTensor
 ## model arch
 if opt.model_name.lower()=='funiegan':
     from nets import dpgan
-    model = dpgan.GeneratorFunieGAN()
+    model = dpgan.GeneratorDPGAN()
 else: 
     # other models
     pass

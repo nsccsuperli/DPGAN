@@ -1,6 +1,6 @@
 """
  > Script for testing .pth models  
-    * set model_name ('funiegan'/'ugan') and  model path
+    * set model_name ('DPGAN') and  model path
     * set data_dir (input) and sample_dir (output) 
 """
 # py libs
@@ -25,10 +25,10 @@ from utils.data_utils import LoadImages
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_dir", type=str, default="data/test/exp/validation/")
-parser.add_argument("--sample_dir", type=str, default="data/OurMeth/真实实验-undertype4-our-result-2")
+parser.add_argument("--sample_dir", type=str, default="data/OurMeth")
 parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
 parser.add_argument("--model_name", type=str, default="funiegan") # or "ugan"
-parser.add_argument("--model_path", type=str, default="checkpoints/FunieGAN/underwater_type4/generator_120.pth")
+parser.add_argument("--model_path", type=str, default="checkpoints/DPGAN/underwater_type4/generator_120.pth")
 opt = parser.parse_args()
 
 ## checks
@@ -40,7 +40,7 @@ Tensor = torch.cuda.FloatTensor if is_cuda else torch.FloatTensor
 ## model arch
 if opt.model_name.lower()=='funiegan':
     from nets import dpgan
-    model = dpgan.GeneratorFunieGAN()
+    model = dpgan.GeneratorDPGAN()
 else: 
     # other models
     pass
@@ -84,9 +84,9 @@ for path, img, im0s, vid_cap in dataset:
     save_path = join(opt.sample_dir, basename(path))
     img = gen_img.data.to(torch.device('cpu'))
     input_tensor = img.squeeze()
-    # 从[0,1]转化为[0,255]，再从CHW转为HWC，最后转为cv2
+    # from [0,1] To [0,255]
     input_tensor = input_tensor.mul_(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).type(torch.uint8).numpy()
-    # RGB转BRG
+    # RGB T0 BRG
     input_tensor = cv2.cvtColor(input_tensor, cv2.COLOR_RGB2BGR)
     view_img =True
     if view_img:
@@ -112,32 +112,6 @@ for path, img, im0s, vid_cap in dataset:
             vid_writer.write(input_tensor)
         # vid_writer.write(gen_img.data)
     print("Tested: %s" % path)
-# for path in test_files:
-#     inp_img = transform(Image.open(path))
-#     inp_img = Variable(inp_img).type(Tensor).unsqueeze(0)
-#     # generate enhanced image
-#     s = time.time()
-#     gen_img = model(inp_img)
-#     times.append(time.time()-s)
-#     # save output
-#     img_sample = torch.cat((inp_img.data, gen_img.data), -1)
-#     save_image(gen_img.data, join(opt.sample_dir, basename(path)), normalize=True)
-#     save_path = join(opt.sample_dir, basename(path))
-#
-#     if save_img:
-#
-#         if vid_path != save_path:  # new video
-#             vid_path = save_path
-#             if isinstance(vid_writer, cv2.VideoWriter):
-#                 vid_writer.release()  # release previous video writer
-#
-#             # fps = vid_cap.get(cv2.CAP_PROP_FPS)
-#             fps = 30
-#             w = 1280
-#             h = 704
-#             vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*opt.fourcc), fps, (w, h))
-#         vid_writer.write(gen_img.data)
-#     print ("Tested: %s" % path)
 
 ## run-time    
 if (len(times) > 1):

@@ -1,9 +1,6 @@
 """
- > Common/standard network archutectures and modules
- > Credit for some functions
-    * github.com/eriklindernoren/PyTorch-GAN
-    * pluralsight.com/guides/artistic-neural-style-transfer-with-pytorch
- > Maintainer: https://github.com/xahidbuffon
+
+ > Maintainer: https://github.com/nsccsuperli/DPGAN
 """
 import torch
 import torch.nn as nn
@@ -59,34 +56,6 @@ class UNetUp(nn.Module):
         x = torch.cat((x, skip_input), 1)
         return x
 
-
-class VGG19_PercepLoss(nn.Module):
-    """ Calculates perceptual loss in vgg19 space
-    """
-    def __init__(self, _pretrained_=True):
-        super(VGG19_PercepLoss, self).__init__()
-        self.vgg = models.vgg19(pretrained=_pretrained_).features
-        for param in self.vgg.parameters():
-            param.requires_grad_(False)
-
-    def get_features(self, image, layers=None):
-        if layers is None: 
-            layers = {'30': 'conv5_2'} # may add other layers
-        features = {}
-        x = image
-        for name, layer in self.vgg._modules.items():
-            x = layer(x)
-            if name in layers:
-                features[layers[name]] = x
-        return features
-
-    def forward(self, pred, true, layer='conv5_2'):
-        true_f = self.get_features(true)
-        pred_f = self.get_features(pred)
-        return torch.mean((true_f[layer]-pred_f[layer])**2)
-"""
-    边缘检测损失函数计算
-"""
 class VGG19_EdgeLoss(nn.Module):
     """ Calculates perceptual loss in vgg19 space
     """
