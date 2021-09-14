@@ -1,0 +1,18 @@
+
+# dataset info
+#dataset_name: "UFO-120"
+dataset_name: "underwater_type5"
+#dataset_path: "/home/scsc/data/underwater_dataset/Paired-20210513T015103Z-001/Paired/"
+#dataset_path: "/home/scsc/data/underwater_dataset/Unpaired-20210513T013029Z-001/Unpaired/"
+dataset_path: "/home/scsc/data/underwater_dataset/UWGAN/restoration/Paired/underwater_type1"
+#dataset_path: "/home/scsc/data/underwater_dataset/UWGAN/restoration/Paired/underwater_type4"
+
+# image info
+chans: 3
+im_width: 256
+im_height: 256
+
+# other params
+val_interval: 1000 # steps
+ckpt_interval: 20  # epochs
+ 
