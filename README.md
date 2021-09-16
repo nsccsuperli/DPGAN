@@ -12,6 +12,8 @@
 4. UnderWater-Type2:[[Google Drive](https://drive.google.com/file/d/1lmrR5avRMPll0Bq3dreeRfLGMcQ5u2N-/view?usp=sharing)]
 
 5. Edge pretrained model:[[Google Drive](https://drive.google.com/file/d/161MW2bGRoHY8Le9IDQQVol3FE3xin1L3/view?usp=sharing)]
+
+6.underwater pretrained model: [[Google Drive](https://drive.google.com/file/d/1kLulTcz5grXY2D-SylgHFZ3Q0cBXE9AZ/view?usp=sharing)]
 ### Usage
 - Download the data, setup data-paths in the [config files](configs)
 - Use the training scripts for paired training of DP-GAN
